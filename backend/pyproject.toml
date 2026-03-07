@@ -1,0 +1,22 @@
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiofiles>=25.1.0",
+    "beanie>=2.0.0",
+    "chromadb>=1.5.2",
+    "fastapi>=0.116.2",
+    "langchain>=0.3.27",
+    "langchain-chroma>=0.2.6",
+    "langchain-community>=0.3.31",
+    "langchain-google-genai>=2.1.12",
+    "motor>=3.7.1",
+    "passlib[bcrypt]>=1.7.4",
+    "pydantic[email]>=2.11.9",
+    "pypdf>=6.0.0",
+    "python-jose[cryptography]>=3.5.0",
+    "python-multipart>=0.0.20",
+]
