@@ -1,8 +1,9 @@
-import React, { useState, useRef } from "react";
-import { Plus, User, Send, MessageSquare, MoreVertical, Loader, FolderOpen } from 'lucide-react';
+import React, { useState, useRef, useEffect } from "react";
+import { Plus, User, Send, MessageSquare, MoreVertical, Loader, FolderOpen, MessageCirclePlus } from 'lucide-react';
 import { pdfAPI, chatAPI } from "../api";
 import { ACCESS_TOKEN } from "../constants";
 import { useNavigate } from "react-router-dom";
+import NewChatModal from "../components/NewChatModal";
 
 interface Message {
   id: string;
@@ -31,7 +32,17 @@ const Home = () => {
   const [activePdfId, setActivePdfId] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isBotTyping, setIsBotTyping] = useState(false);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
 
   const handleLogout = () => {
     localStorage.removeItem(ACCESS_TOKEN);
@@ -66,6 +77,7 @@ const Home = () => {
         sender: 'bot',
         timestamp: new Date()
       }]);
+      setPdfUrl(URL.createObjectURL(file));
     } catch (error) {
       console.error("Failed to upload/process PDF:", error);
       alert("Failed to upload and process PDF. Please try again.");
@@ -99,9 +111,25 @@ const Home = () => {
     }
   };
 
+  const loadPdfFile = async (pdfId: string) => {
+    try {
+      const res = await pdfAPI.getFile(pdfId);
+      const url = URL.createObjectURL(res.data);
+      setPdfUrl(url);
+    } catch (e) {
+      console.error("Failed to load PDF file:", e);
+    }
+  };
+
   const handleSelectChat = (pdfId: string) => {
     setActivePdfId(pdfId);
     loadChatHistory(pdfId);
+    loadPdfFile(pdfId);
+  };
+
+  const handleNewChatSelect = (pdfId: string) => {
+    setShowNewChatModal(false);
+    handleSelectChat(pdfId);
   };
 
   const handleSendMessage = async () => {
@@ -182,9 +210,16 @@ const Home = () => {
             onChange={handleFileUpload} 
           />
           <button 
+            onClick={() => setShowNewChatModal(true)}
+            className="w-full mb-3 flex items-center justify-center gap-2 bg-blue-50 text-blue-600 hover:bg-blue-100 py-2.5 px-4 rounded-lg transition duration-200 font-medium cursor-pointer border border-blue-200 shadow-sm"
+          >
+            <MessageCirclePlus size={20} />
+            New Chat
+          </button>
+          <button 
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 px-4 rounded-lg transition duration-200 font-medium cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-2.5 px-4 rounded-lg transition duration-200 font-medium cursor-pointer shadow-sm"
           >
             {isUploading ? <Loader className="animate-spin" size={20} /> : <Plus size={20} />}
             {isUploading ? "Processing PDF..." : "Upload New PDF"}
@@ -251,9 +286,27 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Right Side - Chat Interface */}
-      <div className="flex-1 flex flex-col">
-        {/* Chat Header */}
+      {/* Right Side - Split View Content */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* PDF Viewer Pane */}
+        {activePdfId && pdfUrl && (
+          <div className="w-1/2 border-r border-gray-200 flex flex-col bg-gray-100 hidden lg:flex">
+            <div className="p-3 bg-white border-b border-gray-200 flex items-center shadow-sm">
+              <h2 className="text-sm font-semibold text-gray-700">Document Viewer</h2>
+            </div>
+            <div className="flex-1 overflow-hidden relative">
+               <iframe 
+                 src={`${pdfUrl}#toolbar=0`} 
+                 className="w-full h-full border-none" 
+                 title="PDF Viewer"
+               />
+            </div>
+          </div>
+        )}
+
+        {/* Chat Interface */}
+        <div className={`${activePdfId && pdfUrl ? 'w-full lg:w-1/2' : 'flex-1'} flex flex-col`}>
+          {/* Chat Header */}
         <div className="bg-white border-b border-gray-200 p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
@@ -330,7 +383,15 @@ const Home = () => {
             Press Enter to send, Shift + Enter for new line
           </p>
         </div>
+        </div>
       </div>
+
+      {/* Modals */}
+      <NewChatModal 
+        isOpen={showNewChatModal} 
+        onClose={() => setShowNewChatModal(false)}
+        onSelectPdf={handleNewChatSelect}
+      />
     </div>
   );
 };

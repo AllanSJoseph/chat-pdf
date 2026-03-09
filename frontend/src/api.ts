@@ -18,7 +18,17 @@ api.interceptors.request.use(
     (error) => {
         return Promise.reject(error);
     }
-)
+);
+
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401 && localStorage.getItem(ACCESS_TOKEN)) {
+            window.dispatchEvent(new Event('session-expired'));
+        }
+        return Promise.reject(error);
+    }
+);
 
 export const authAPI = {
     login: (data: FormData) => api.post('/auth/login', data),
@@ -34,7 +44,8 @@ export const pdfAPI = {
     },
     process: (pdfId: string) => api.post(`/pdf/process/${pdfId}`),
     getUploads: () => api.get('/pdf/uploads'),
-    deleteUpload: (pdfId: string) => api.delete(`/pdf/delete/${pdfId}`)
+    deleteUpload: (pdfId: string) => api.delete(`/pdf/delete/${pdfId}`),
+    getFile: (pdfId: string) => api.get(`/pdf/file/${pdfId}`, { responseType: 'blob' })
 };
 
 export const chatAPI = {

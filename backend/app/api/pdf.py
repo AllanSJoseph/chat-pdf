@@ -1,4 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi.responses import FileResponse
+import os
 import uuid
 import traceback
 
@@ -102,3 +104,25 @@ async def delete_pdf(pdf_id: str, current_user: User = Depends(get_current_user)
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/file/{pdf_id}")
+async def get_pdf_file(pdf_id: str, current_user: User = Depends(get_current_user)):
+    try:
+        pdf_doc = await PDFDoc.find_one({"pdf_id": pdf_id})
+        if not pdf_doc:
+            raise HTTPException(status_code=404, detail="PDF not found")
+        if pdf_doc.user_id != str(current_user.id):
+            raise HTTPException(status_code=403, detail="Not authorized")
+            
+        # File path in DB is relative to BASE_DIR
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+        file_path = os.path.join(base_dir, pdf_doc.file_url)
+        
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File physically not found")
+            
+        return FileResponse(path=file_path, media_type='application/pdf', filename=pdf_doc.filename)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

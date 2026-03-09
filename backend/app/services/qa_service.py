@@ -18,7 +18,7 @@ def get_qa_chain(user_id: str, pdf_id: str):
     
     retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
     
-    llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.2)
+    llm = ChatGoogleGenerativeAI(model="gemini-3-flash-preview", temperature=0.2)
     
     # We will pass chat history explicitly instead of using memory inside the chain.
     # It allows us to manage it with MongoDB without complex memory wrapping.

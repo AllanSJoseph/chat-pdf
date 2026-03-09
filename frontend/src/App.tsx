@@ -6,6 +6,7 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Uploads from "./pages/Uploads";
+import SessionTimeoutModal from "./components/SessionTimeoutModal";
 
 
 function Logout() {
@@ -18,6 +19,7 @@ const App = () => {
   return (
     <>
       <BrowserRouter>
+        <SessionTimeoutModal />
         <Routes>
 
           <Route 
